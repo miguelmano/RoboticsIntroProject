@@ -1,0 +1,46 @@
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="waffle_pi"/>
+  <arg name="bag_name" default="fixed_slam_easy"/>
+  <arg name="map_file" default="$(find turtlebot3_datasets)/data/map.yaml" />
+
+  <!-- Turtlebot3 -->
+  <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+    <arg name="model" value="$(arg model)" />
+  </include>
+
+  <!-- Map server -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" />
+
+  <!-- TF -->
+
+  <!-- ROSBAG -->
+  <param name="/use_sim_time" value="true"/>
+  <node pkg="rosbag" type="play" name="rosbag_player" 
+        args="--clock $(find turtlebot3_datasets)/data/$(arg bag_name).bag"/>
+
+  <!-- EKF robot localisation -->
+
+  <!-- AMCL -->
+
+  <!-- Groundtruth path -->
+
+  <!-- Estimated path -->
+
+  <!-- Position error publisher -->
+
+  <!-- RViz -->
+  <node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find turtlebot3_datasets)/rviz/dataset.rviz"/>
+
+  <!-- Static transforms -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher_map_odom" 
+        args="0 0 0 0 0 0 1 map odom" />
+  
+  <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher_mocap_map" 
+        required="true" args="0.935 1.34 -0.023 0.001 -0.003 0.737 0.676 mocap map" />
+       
+  <!-- Ground truth path -->
+  <node pkg="turtlebot3_datasets" type="ground_truth_path.py" name="ground_truth_path" output="screen"/>
+  
+</launch>
+

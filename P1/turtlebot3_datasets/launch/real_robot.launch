@@ -1,0 +1,42 @@
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="waffle_pi"/>
+  <arg name="bag_name" default="real_bag"/>
+  <arg name="map_file" default="$(find turtlebot3_datasets)/data/map_sala.yaml" />
+
+  <!-- Turtlebot3 -->
+  <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+    <arg name="model" value="$(arg model)" />
+  </include>
+
+  <!-- Map server -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" output="screen"/>
+
+  <!-- TF -->
+  
+  <!-- ROSBAG -->
+  <param name="/use_sim_time" value="true"/>
+  <node pkg="rosbag" type="play" name="rosbag_player" 
+          args="--clock $(find turtlebot3_datasets)/data/3.bag"/>
+
+  <!-- EKF robot localisation -->
+
+  <!-- AMCL-->
+
+  <!-- Groundtruth path -->
+
+  <!-- Estimated path -->
+
+  <!-- Position error publisher -->
+  
+    <!-- Node to convert odometry to path -->
+  <node pkg="turtlebot3_datasets" type="odom_to_path_dataset.py" name="odom_to_path_node" output="screen"/>
+
+  <!-- rviz -->
+  <node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find turtlebot3_datasets)/rviz/real_robot.rviz"/>
+  <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="static_transform_publisher" args="0 0 0 0 0 0 1 map odom" /> -->
+       
+  <!-- Odom to Path Node (Publishing the path from /odom) -->
+  <!-- <node pkg="turtlebot3_datasets" type="odom_to_path_dataset.py" name="odom_to_path_dataset" output="screen"/> -->
+
+</launch>

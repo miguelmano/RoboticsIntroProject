@@ -1,0 +1,83 @@
+<launch>
+  <!-- Arguments -->
+  <arg name="model" default="waffle_pi" />
+  <arg name="bag_name" default="bagekf" />
+  <arg name="map_file" default="$(find turtlebot3_datasets)/data/map_sala.yaml"/>
+  <arg name="move_forward_only" default="false"/>
+  <arg name="tf2_map2odom" default="0 0 0 0 0 0 1 map odom"/>
+
+  <arg name="tf2_base_scan2base_link" default="0 0 0 0 0 0 base_link base_scan"/>
+
+  <!-- Map server -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/> 
+
+  <!-- Turtlebot3 bringup -->
+  <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+    <arg name="model" value="$(arg model)" />
+  </include>
+
+  <!-- Use simulation time -->
+  <param name="/use_sim_time" value="true"/>
+
+  <!-- Rosbag with downsampled ground truth to 1Hz -->
+  <node pkg="rosbag" type="play" name="rosbag_player" 
+        args="--clock --rate 4 $(find turtlebot3_datasets)/data/$(arg bag_name).bag"/>   <!-- rate 0.6 -->
+
+  
+  <!-- ekf_localization_node --> 
+
+  <node pkg="robot_localization" type="ekf_localization_node" name="robot_localization_ekf_node_odom" clear_params="true">
+  <param name="frequency" value="2.5" />
+  <param name="sensor_timeout" value="0.2" />
+  <param name="two_d_mode" value="true" /> 
+  <param name="odom_frame" value="odom" />
+  <param name="base_link_frame" value="base_link" />
+  <param name="world_frame" value="map" />
+
+  <param name="odom1_relative" value="false"/>
+
+  <!-- Existing Odometry and IMU -->
+  <param name="odom0" value="odom" />
+  <rosparam param="odom0_config">
+    [true, true, true, 
+     false, false, false,
+     true, true, false,
+     false, false, true,
+     false, false, false]
+  </rosparam>
+  <param name="odom0_relative" value="true"/>
+  
+  <param name="imu0" value="imu" />
+  <rosparam param="imu0_config">
+    [false, false, false,
+     false, false, true,
+     false, false, false,
+     false, false, true,
+     false, false, false]
+  </rosparam>
+  <param name="imu0_relative" value="true"/>
+
+  <rosparam param="initial_state">
+     [4.2, -5.5, 0.0,
+      0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0]</rosparam>
+  </node>
+
+  <!-- Python Script for Path Visualization -->
+  <node pkg="turtlebot3_datasets" type="ekf_localization_path.py" name="ekf_localization_path" output="screen"/> 
+  
+  <!-- Ground truth path 
+  <node pkg="turtlebot3_datasets" type="ground_truth_path.py" name="ground_truth_path" output="screen"/> -->
+
+  <!-- RViz for Visualization -->
+  <node pkg="rviz" type="rviz" name="rviz" required="true" args="-d $(find turtlebot3_datasets)/rviz/localization_dataset.rviz"/>
+
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="tf2_map2odom" required="true" args="$(arg tf2_map2odom)"/>
+  <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf2_base_scan2base_link" required="true" args="$(arg tf2_base_scan2base_link)"/>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="tf2_base_footprint2base_scan" required="true" args="0 0 0 0 0 0 base_footprint base_scan"/> -->
+ 
+</launch>
+
